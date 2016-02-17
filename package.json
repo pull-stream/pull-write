@@ -1,0 +1,21 @@
+{
+  "name": "pull-write",
+  "description": "",
+  "version": "0.0.0",
+  "homepage": "https://github.com/dominictarr/pull-write",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dominictarr/pull-write.git"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "pull-cat": "^1.1.9",
+    "pull-stream": "^3.1.0",
+    "tape": "^4.4.0"
+  },
+  "scripts": {
+    "test": "set -e; for t in test/*.js; do node $t; done"
+  },
+  "author": "Dominic Tarr <dominic.tarr@gmail.com> (http://dominictarr.com)",
+  "license": "MIT"
+}
