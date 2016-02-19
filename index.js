@@ -4,22 +4,21 @@
 
 //how would we measure this anyway?
 
-function count (length, item) {
-  return length + 1
+function append (array, item) {
+  (array = array || []).push(item)
+  return array
 }
 
-module.exports = function (write, reduceLength, max, cb) {
-  reduceLength = reduceLength || count
+module.exports = function (write, reduce, max, cb) {
+  reduce = reduce || append
   var ended
   return function (read) {
-    var queue = [], writing = false, length = 0
+    var queue = null, writing = false, length = 0
 
     function flush () {
       if(writing) return
       var _queue = queue
-      queue = []
-      writing = true
-      length = 0
+      queue = null; writing = true; length = 0
       write(_queue, function (err) {
         writing = false
         if(ended === true && !length) cb(err)
@@ -33,12 +32,17 @@ module.exports = function (write, reduceLength, max, cb) {
       if(ended) return
       ended = end
       if(!ended) {
-        queue.push(data); length = reduceLength(length, data); flush()
+        queue = reduce(queue, data)
+        length = (queue && queue.length) || 0
+        flush()
         if(length < max) read(null, next)
       }
       else if(!writing) cb(ended === true ? null : ended)
     })
   }
 }
+
+
+
 
 
