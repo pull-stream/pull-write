@@ -4,7 +4,7 @@ base class for creating generic pull-sinks
 that write to some device via an async call.
 
 
-## Write(asyncWrite, lengthReduce, max, cb)
+## Write(asyncWrite, reduce, max, cb)
 
 ### asyncWrite(ary, cb)
 
@@ -14,18 +14,22 @@ and while it is working `pull-write` will buffer any subsequent writes,
 until the buffer has the length of at most `max`,
 or `asyncWrite` has called back.
 
-### lengthReduce(length, item)
+### reduce (queue, item)
 
-`length` is the current length of the buffer.
-`item` is a piece of data about to be added to the internal buffer,
-`lengthReduce` must return the length of the buffer plus this item.
+`queue` is the current backlog of data the `pull-write` is getting ready to write.
+`item` is the next incoming item. `reduce` must add `item` into `queue`
+in whatever way is appropiate. If `queue` is empty, then it will be `null`.
+Your `reduce` function must handle that case and set an initial value.
 
-if `lengthReduce` is not provided, it will default to count the number of elements in the buffer.
+by default, `reduce` will be a function that initializes a buffer,
+and then pushes the new items onto that buffer, this means `max` will be
+compared to the number of items in that buffer.
 
 ### max
 
-A number, when the internal buffer gets this big it will stop reading more,
-until asyncWrite calls back.
+A number, when the `.length` property of the `queue` returned by `reduce`
+gets this big `pull-write` will stop reading more, until asyncWrite
+calls back.
 
 ## example
 
@@ -40,21 +44,15 @@ var Write = require('pull-write')
 var LevelWrite = function (db, cb) {
   var max = 100
   return Write(function (ary, cb) {
-    var ts = 0
-    ary.map(function (e) {
-      ts = Math.max(ts, e.ts)
-      e.type = 'put'
-    })
-    //assuming that the incoming data always has a timestamp,
-    //write that out to be queried separately.
-    ary.push({key: '~meta~ts', value: ts, type: 'put'})
-
     db.batch(ary, cb)
-  }, function (len, data) {
-    //since data is json and we havn't serialized it yet,
-    //just keep a count instead of calculating the exact length.
-    //if the input was buffers, it would be easy to calculate the length.
-    return len + 1
+  }, function (queue, data) {
+    if(!queue)
+      queue = [{key: '~meta~ts', value: 0, type: 'put'}]
+    queue.push({key:data.key, value: data.value, type: 'put'})
+    //the record of the current sequence is always the first value
+    //in the batch, so we can update it easily.
+    queue[0].value = data.ts
+    return queue
   }, max, cb)
 }
 
@@ -64,6 +62,10 @@ var LevelWrite = function (db, cb) {
 ## License
 
 MIT
+
+
+
+
 
 
 
