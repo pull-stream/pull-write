@@ -21,14 +21,15 @@ module.exports = function (write, reduce, max, cb) {
       queue = null; writing = true; length = 0
       write(_queue, function (err) {
         writing = false
+        console.log(ended, length, writing)
         if(ended === true && !length) cb(err)
         else if(ended && ended !== true) cb(err || ended)
         else if(err) read(ended = err, cb) //abort upstream.
         else if(length) flush()
+        else read(null, next)
       })
     }
-
-    read(null, function next (end, data) {
+    function next (end, data) {
       if(ended) return
       ended = end
       if(!ended) {
@@ -38,9 +39,11 @@ module.exports = function (write, reduce, max, cb) {
         if(length < max) read(null, next)
       }
       else if(!writing) cb(ended === true ? null : ended)
-    })
+    }
+    read(null, next)
   }
 }
+
 
 
 
