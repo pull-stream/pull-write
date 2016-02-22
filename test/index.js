@@ -97,3 +97,24 @@ tape('read then error', function (t) {
   )
 })
 
+
+tape('read to max', function (t) {
+  var output = []
+  pull(
+    pull.count(30),
+    createWrite(function write(data, cb) {
+      setImmediate(function () {
+        output = output.concat(data); cb()
+      })
+    }, null, 10, function (err) {
+      t.notOk(err)
+      t.equal(output.length, 31)
+      t.end()
+    })
+  )
+})
+
+
+
+
+
