@@ -114,7 +114,26 @@ tape('read to max', function (t) {
   )
 })
 
+tape('sometimes reduce to null', function (t) {
+  var output = []
+  pull(
+    pull.count(30),
+    createWrite(function write(data, cb) {
+      if(data == null) throw new Error('data cannot be null')
+      setImmediate(function () {
+        output = output.concat(data); cb()
+      })
+    }, function (a, b) {
+      if(!(b%2)) return a
+      return (a||[]).concat(b)
+    }, 10, function (err) {
+      t.notOk(err)
+      t.deepEqual(output, [ 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29 ])
+      t.end()
+    })
+  )
 
+})
 
 
 
