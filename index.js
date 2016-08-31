@@ -11,9 +11,14 @@ function append (array, item) {
 
 module.exports = function (write, reduce, max, cb) {
   reduce = reduce || append
-  var ended
-  return function (read) {
+  var ended, _cb, _read
+  function reader (read) {
     var queue = null, writing = false, length = 0
+    _read = read
+    if(ended) return read(ended, function (err) {
+      cb(err)
+      _cb && _cb()
+    })
 
     function flush () {
       if(writing) return
@@ -23,12 +28,16 @@ module.exports = function (write, reduce, max, cb) {
         writing = false
 
         if(ended === true && !length) cb(err)
-        else if(ended && ended !== true) cb(err || ended)
+        else if(ended && ended !== true) {
+          cb(ended)
+          _cb && _cb()
+        }
         else if(err) read(ended = err, cb) //abort upstream.
         else if(length) flush()
         else read(null, next)
       })
     }
+
     function next (end, data) {
       if(ended) return
       ended = end
@@ -40,8 +49,30 @@ module.exports = function (write, reduce, max, cb) {
       }
       else if(!writing) cb(ended === true ? null : ended)
     }
+
+    reader.abort = function (__cb) {
+      _cb = function (end) {
+          __cb && __cb()
+        }
+        read(ended = new Error('aborted'), function (end) {
+        end = end === true ? null : end
+        if(!writing) {
+          cb && cb(end)
+          _cb && _cb(end)
+        }
+      })
+    }
+
     read(null, next)
   }
-}
 
+  reader.abort = function (cb) {
+    ended = new Error('aborted before connecting')
+    _cb = function (err) {
+      cb && cb()
+    }
+  }
+
+  return reader
+}
 
