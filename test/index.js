@@ -136,4 +136,58 @@ tape('sometimes reduce to null', function (t) {
 })
 
 
+tape('abort', function (t) {
+  t.plan(2)
+  var output = [], writer = createWrite(function write(data, cb) {
+      if(data == null) throw new Error('data cannot be null')
+      setImmediate(function () {
+        output = output.concat(data); cb()
+      })
+    }, function (a, b) {
+      if(!(b%2)) return a
+      return (a||[]).concat(b)
+    }, 10, function (err) {
+      t.ok(err)
+    })
+  pull(
+    pull.count(30),
+    writer
+  )
+
+  writer.abort(function (err) {
+    t.notOk(err)
+    t.end()
+  })
+
+})
+
+tape('abort', function (t) {
+  t.plan(2)
+  var writer = createWrite(function write(data, cb) {
+      if(data == null) throw new Error('data cannot be null')
+      setImmediate(function () {
+        output = output.concat(data); cb()
+      })
+    }, function (a, b) {
+      if(!(b%2)) return a
+      return (a||[]).concat(b)
+    }, 10, function (err) {
+      t.ok(err)
+    })
+
+  writer.abort(function (err) {
+    t.notOk(err)
+    t.end()
+  })
+
+  pull(
+    pull.count(30),
+    writer
+  )
+
+})
+
+
+
+
 
