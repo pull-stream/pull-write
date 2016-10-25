@@ -20,6 +20,16 @@ module.exports = function (write, reduce, max, cb) {
       _cb && _cb()
     })
 
+    var reading = false
+    function more () {
+      if(reading || ended) return
+      reading = true
+      read(null, function (err, data) {
+        reading = false
+        next(err, data)
+      })
+    }
+
     function flush () {
       if(writing) return
       var _queue = queue
@@ -34,7 +44,7 @@ module.exports = function (write, reduce, max, cb) {
         }
         else if(err) read(ended = err, cb) //abort upstream.
         else if(length) flush()
-        else read(null, next)
+        else more()
       })
     }
 
@@ -45,7 +55,7 @@ module.exports = function (write, reduce, max, cb) {
         queue = reduce(queue, data)
         length = (queue && queue.length) || 0
         if(queue != null) flush()
-        if(length < max) read(null, next)
+        if(length < max) more()
       }
       else if(!writing) cb(ended === true ? null : ended)
     }
@@ -63,7 +73,7 @@ module.exports = function (write, reduce, max, cb) {
       })
     }
 
-    read(null, next)
+    more()
   }
 
   reader.abort = function (cb) {
@@ -75,4 +85,10 @@ module.exports = function (write, reduce, max, cb) {
 
   return reader
 }
+
+
+
+
+
+
 
