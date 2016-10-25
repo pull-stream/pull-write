@@ -7,7 +7,10 @@
     "type": "git",
     "url": "git://github.com/dominictarr/pull-write.git"
   },
-  "dependencies": {},
+  "dependencies": {
+    "pull-cat": "^1.1.11",
+    "pull-stream": "^3.4.5"
+  },
   "devDependencies": {
     "pull-cat": "^1.1.9",
     "pull-stream": "^3.1.0",
