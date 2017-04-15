@@ -190,4 +190,20 @@ tape('abort', function (t) {
 
 
 
+tape('range error', function (t) {
+  var len = 0
+  pull(
+    pull.count(10000),
+    createWrite(function (data, cb) {
+      len += data.length
+      cb()
+    }, function (a, b) {
+      if(!a) return [b]
+      return a.concat(b)
+    }, 100, function (err) {
+      t.equal(len, 10001)
+      t.end()
+    })
+  )
+})
 
