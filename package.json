@@ -8,6 +8,7 @@
     "url": "git://github.com/dominictarr/pull-write.git"
   },
   "dependencies": {
+    "looper": "^4.0.0",
     "pull-cat": "^1.1.11",
     "pull-stream": "^3.4.5"
   },
