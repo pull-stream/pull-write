@@ -4,6 +4,8 @@
 
 //how would we measure this anyway?
 
+var Looper = require('looper')
+
 function append (array, item) {
   (array = array || []).push(item)
   return array
@@ -15,20 +17,30 @@ module.exports = function (write, reduce, max, cb) {
   function reader (read) {
     var queue = null, writing = false, length = 0
     _read = read
-    if(ended) return read(ended, function (err) {
-      cb(err)
-      _cb && _cb()
-    })
+    if(ended)
+      return read(ended, function (err) {
+        cb(err); _cb && _cb()
+      })
 
     var reading = false
-    function more () {
-      if(reading || ended) return
-      reading = true
-      read(null, function (err, data) {
-        reading = false
-        next(err, data)
+    var more = Looper(function () {
+        if(reading || ended) return
+        reading = true
+        read(null, function (err, data) {
+          reading = false
+          ;(function (end, data) {
+            if(ended) return
+            ended = end
+            if(!ended) {
+              queue = reduce(queue, data)
+              length = (queue && queue.length) || 0
+              if(queue != null) flush()
+              if(length < max) more()
+            }
+            else if(!writing) cb(ended === true ? null : ended)
+          })(err, data)
+        })
       })
-    }
 
     function flush () {
       if(writing) return
@@ -46,18 +58,6 @@ module.exports = function (write, reduce, max, cb) {
         else if(length) flush()
         else more()
       })
-    }
-
-    function next (end, data) {
-      if(ended) return
-      ended = end
-      if(!ended) {
-        queue = reduce(queue, data)
-        length = (queue && queue.length) || 0
-        if(queue != null) flush()
-        if(length < max) more()
-      }
-      else if(!writing) cb(ended === true ? null : ended)
     }
 
     reader.abort = function (__cb) {
