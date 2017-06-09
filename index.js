@@ -18,7 +18,7 @@ module.exports = function (write, reduce, max, cb) {
     var queue = null, writing = false, length = 0
     _read = read
     if(ended)
-      return read(ended, function (err) {
+      return read(ended.abort ? true : ended, function (err) {
         cb(err); _cb && _cb()
       })
 
@@ -64,7 +64,9 @@ module.exports = function (write, reduce, max, cb) {
       _cb = function (end) {
           __cb && __cb()
         }
-        read(ended = new Error('aborted'), function (end) {
+        var err = new Error('aborted')
+        err.abort = true
+        read(ended = err, function (end) {
         end = end === true ? null : end
         if(!writing) {
           cb && cb(end)
@@ -85,10 +87,4 @@ module.exports = function (write, reduce, max, cb) {
 
   return reader
 }
-
-
-
-
-
-
 
