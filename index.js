@@ -54,7 +54,7 @@ module.exports = function (write, reduce, max, cb) {
           cb(ended)
           _cb && _cb()
         }
-        else if(err) read(ended = err, cb) //abort upstream.
+        else if(err) read(ended = (err.abort ? true : err), cb) //abort upstream.
         else if(length) flush()
         else more()
       })
